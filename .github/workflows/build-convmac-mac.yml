@@ -62,8 +62,15 @@ jobs:
         run: pyinstaller convmac.spec
         working-directory: ${{ steps.proj.outputs.project_dir }}
 
+      - name: Zip as ConvMac.app (чтобы в архиве была папка ConvMac.app)
+        run: |
+          cd ${{ steps.proj.outputs.project_dir }}/dist
+          zip -r ../ConvMac-app.zip ConvMac.app
+          cd ..
+          mv ConvMac-app.zip dist/
+
       - name: Upload ConvMac.app
         uses: actions/upload-artifact@v4
         with:
           name: ConvMac-macos
-          path: ${{ steps.proj.outputs.project_dir }}/dist/ConvMac.app
+          path: ${{ steps.proj.outputs.project_dir }}/dist/ConvMac-app.zip
