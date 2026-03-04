@@ -1,5 +1,5 @@
 # Сборка ConvMac.app на macOS через GitHub Actions.
-# Результат: артефакт ConvMac-macos (внутри ConvMac.app) — скачать в Actions → Run → Artifacts.
+# Две сборки: Apple Silicon (M1/M2) и Intel — скачайте нужный артефакт под ваш Mac.
 
 name: Build ConvMac (macOS)
 
@@ -20,7 +20,18 @@ on:
 
 jobs:
   build-mac:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Apple Silicon (M1/M2) — macos-latest
+          - runner: macos-latest
+            label: AppleSilicon
+          # Intel Mac — macos-13 ещё на части хостинга даёт x86_64
+          - runner: macos-13
+            label: Intel
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout
@@ -62,7 +73,7 @@ jobs:
         run: pyinstaller convmac.spec
         working-directory: ${{ steps.proj.outputs.project_dir }}
 
-      - name: Zip as ConvMac.app (чтобы в архиве была папка ConvMac.app)
+      - name: Zip as ConvMac.app
         run: |
           cd ${{ steps.proj.outputs.project_dir }}/dist
           zip -r ../ConvMac-app.zip ConvMac.app
@@ -72,5 +83,5 @@ jobs:
       - name: Upload ConvMac.app
         uses: actions/upload-artifact@v4
         with:
-          name: ConvMac-macos
+          name: ConvMac-macos-${{ matrix.label }}
           path: ${{ steps.proj.outputs.project_dir }}/dist/ConvMac-app.zip
