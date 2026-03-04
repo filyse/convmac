@@ -1,0 +1,7 @@
+# Зависимости для ConvMac (запуск и сборка на macOS)
+PyQt5>=5.15.0
+pyinstaller>=5.0
+
+# Опционально: Kafka и мониторинг процессов
+# psutil
+# kafka-python

@@ -1,0 +1,9 @@
+# ConvMac / Python
+venv_mac/
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec.bak
+
+# Не игнорируем convmac.py, convmac.spec, requirements_convmac.txt, .github/

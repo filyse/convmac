@@ -1,0 +1,69 @@
+# Сборка ConvMac.app на macOS через GitHub Actions.
+# Результат: артефакт ConvMac-macos (внутри ConvMac.app) — скачать в Actions → Run → Artifacts.
+
+name: Build ConvMac (macOS)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'convmac.py'
+      - 'convmac.spec'
+      - 'requirements_convmac.txt'
+      - '.github/workflows/build-convmac-mac.yml'
+  workflow_dispatch:
+    inputs:
+      project_subdir:
+        description: 'Подпапка с проектом (если convmac.py не в корне репо). Например: Scripts'
+        required: false
+        default: ''
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set project directory
+        id: proj
+        run: |
+          SUBDIR="${{ github.event.inputs.project_subdir }}"
+          if [ -n "$SUBDIR" ] && [ -f "$SUBDIR/convmac.py" ]; then
+            echo "project_dir=$SUBDIR" >> $GITHUB_OUTPUT
+          else
+            if [ -f "convmac.py" ]; then
+              echo "project_dir=." >> $GITHUB_OUTPUT
+            elif [ -f "Scripts/convmac.py" ]; then
+              echo "project_dir=Scripts" >> $GITHUB_OUTPUT
+            else
+              echo "::error::convmac.py not found in root or Scripts/"
+              exit 1
+            fi
+          fi
+          echo "Using project_dir: $(cat $GITHUB_OUTPUT | grep project_dir | cut -d= -f2)"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ffmpeg (for bundling)
+        run: brew install ffmpeg
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_convmac.txt
+        working-directory: ${{ steps.proj.outputs.project_dir }}
+
+      - name: Build with PyInstaller
+        run: pyinstaller convmac.spec
+        working-directory: ${{ steps.proj.outputs.project_dir }}
+
+      - name: Upload ConvMac.app
+        uses: actions/upload-artifact@v4
+        with:
+          name: ConvMac-macos
+          path: ${{ steps.proj.outputs.project_dir }}/dist/ConvMac.app
